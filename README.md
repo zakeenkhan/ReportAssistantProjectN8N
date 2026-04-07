@@ -34,6 +34,26 @@ Send Email (Gmail)
 Wait → Loop to Next Cost Center
 ```
 
+## 📸 Workflow Screenshots
+
+### Main Workflow Overview
+![Main Workflow](Report Assistant.JPG)
+
+### Workflow Section 1
+![Workflow Part 1](part1.JPG)
+
+### Workflow Section 2
+![Workflow Part 2](part2.JPG)
+
+### Sample Report Output 1
+![Sample Report 1](report1.JPG)
+
+### Sample Report Output 2
+![Sample Report 2](report2.JPG)
+
+### Sample Report Output 3
+![Sample Report 3](Report3.JPG)
+
 ---
 
 ## 📋 Project Overview
