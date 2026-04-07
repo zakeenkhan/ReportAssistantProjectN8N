@@ -1,0 +1,825 @@
+{
+  "name": "Reporting Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtDayOfMonth": 5
+            }
+          ]
+        }
+      },
+      "id": "35e1da2b-91de-4c85-a9ec-a11018441c45",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        4608,
+        -80
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "763135c1-fc44-4b2d-8b5d-552d1b18d1fc",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        4640,
+        368
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ac6bcf14-13e3-464d-b9cd-4adee56018d7",
+              "name": "Cost Center",
+              "type": "string",
+              "value": "={{ $json['Cost Center'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0b7c08d9-f975-4e0e-b229-cb3d85a63bf4",
+      "name": "CostCentrs",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        5776,
+        -80
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "db00eac4-ed14-4a9e-ba44-7a8ebfed6abe",
+      "name": "Date & Time",
+      "type": "n8n-nodes-base.dateTime",
+      "position": [
+        4928,
+        -80
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input date from the previous node\nconst inputDateStr = $input.first().json.currentDate;\nconst inputDate = new Date(inputDateStr);\n\n// Move to the first day of the current month\ninputDate.setDate(1);\n\n// Step back one day to land in the previous month\ninputDate.setDate(0);\n\n// Extract previous month and year\nconst previousMonth = inputDate.getMonth() + 1; // Months are 0-based\nconst year = inputDate.getFullYear(); // This will reflect the correct year, even in January\n\nreturn [\n  {\n    json: {\n      previousMonth: previousMonth.toString().padStart(2, '0'), // e.g., \"01\", \"12\"\n      year: year.toString()                                     // e.g., \"2024\"\n    }\n  }\n];\n"
+      },
+      "id": "1915873d-35f4-4ee0-ae95-128a1b5cd99a",
+      "name": "PreviousMonth",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5200,
+        -80
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4a6c71a-0df4-49df-9068-f039ddf7d507",
+              "name": "CostCenter",
+              "type": "string",
+              "value": "={{ $json['Cost Center'] }}"
+            },
+            {
+              "id": "ade95f85-baa2-4f5d-a125-7360b17cf99b",
+              "name": "previousMonth",
+              "type": "string",
+              "value": "={{ $('PreviousMonth').item.json.previousMonth }}"
+            },
+            {
+              "id": "36c1d772-5bb7-47a6-81f9-1b70208e558b",
+              "name": "year",
+              "type": "string",
+              "value": "={{ $('PreviousMonth').item.json.year }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8a9b405-f069-4a6f-949b-b0f40db6866b",
+      "name": "Selected Cost Center",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        4928,
+        384
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d7a13ce7-24d3-406a-934b-97f9a47b206c",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json['Cost Center'] }}",
+              "rightValue": "AI DEPARTMENT"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "0e0abad3-1230-41e1-b365-8c24916e7c65",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        6048,
+        -80
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "html": "<style>\n  body {\n    font-family: 'Segoe UI', Arial, sans-serif;\n    background-color: #ffffff;\n    color: #333;\n    padding: 20px;\n  }\n\n  /* 1. The Main Section Header (e.g., 2. Financial Performance) */\n  h2 {\n    color: #003366; /* Deep Navy */\n    border-bottom: 3px solid #003366;\n    padding-bottom: 5px;\n    margin-top: 30px;\n    font-size: 1.4rem;\n  }\n\n  /* 2. The Table Header Styling */\n  table {\n    width: 100%;\n    border-collapse: collapse;\n    margin-top: 10px;\n  }\n\n  th {\n    background-color: #004a99; /* Bright Blue from image */\n    color: #ffffff;\n    padding: 12px;\n    text-align: center;\n    border-right: 1px solid #ffffff;\n    font-size: 0.85rem;\n  }\n\n  /* 3. The Category Rows (Revenue, Direct Expenses) */\n  tr td:first-child {\n    font-weight: bold;\n    background-color: #e6f0ff; /* Light blue side bar */\n  }\n\n  /* 4. Table Cells and Zebra Striping */\n  td {\n    padding: 10px;\n    border: 1px solid #d1d8e0;\n    text-align: right;\n    font-size: 0.9rem;\n  }\n\n  tr:nth-child(even) {\n    background-color: #f2f7ff; /* Very light blue stripe */\n  }\n\n  /* 5. Positive and Negative Variance Colors */\n  .positive {\n    color: #28a745; /* Green */\n    font-weight: bold;\n  }\n\n  .negative {\n    color: #dc3545; /* Red */\n    font-weight: bold;\n  }\n</style>\n\n<body>\n  {{ $json.html }}\n</body>\n"
+      },
+      "id": "f870b385-c198-4659-a3d0-9a4784986930",
+      "name": "HTML",
+      "type": "n8n-nodes-base.html",
+      "position": [
+        4720,
+        1088
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = items;\n\n// Get column names from the first row\nconst headers = Object.keys(rows[0].json);\n\n// Build header HTML\nlet headerHtml = headers.map(col => `<th>${col}</th>`).join('');\n\n// Build rows\nlet bodyHtml = rows.map(row => {\n  return `<tr>${headers.map(col => `<td>${row.json[col]}</td>`).join('')}</tr>`;\n}).join('');\n\n// Combine into one table\nconst tableHtml = `\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n  <thead><tr>${headerHtml}</tr></thead>\n  <tbody>${bodyHtml}</tbody>\n</table>\n`;\n\nreturn [{ json: { table: tableHtml } }];\n"
+      },
+      "id": "4114754f-bab3-42d4-b1e9-335180e6f1bb",
+      "name": "verticalPL",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5584,
+        368
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "0c4c933e-0117-4121-950c-63f51491ed1d",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        6048,
+        384
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "jsCode": "const table1 = $input.first().json.table; // From the first input node\nconst table2 = $items(\"verticalPL\")[0].json.table; // From the node named 'verticalPL'\nconst table3 = $items(\"WIP1\")[0].json.table; // From the node named 'WIP1'\nconst table4 = $items(\"Employees1\")[0].json.table; // From the node named 'Employees1'\n\nconst htmlOutput = `\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; font-size: 14px; color: #333; }\n    h2 { margin-top: 30px; }\n    table { border-collapse: collapse; width: 100%; margin-top: 10px; }\n    th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }\n    th:first-child, td:first-child { text-align: left; }\n    thead { background-color: #f0f0f0; }\n  </style>\n</head>\n<body>\n  <h2>📊 Financial Overview – YTD & PM Summary</h2>\n  ${table1}\n\n  <h2>📊 Financial Overview – Vertical Profit & Loss</h2>\n  ${table2}\n\n  <h2>📊 Financial Overview – WIP Summary</h2>\n  ${table3}\n\n  <h2>👥 Employees in the Business Unit</h2>\n  ${table4}\n</body>\n</html>\n`;\n\nreturn [{ json: { html: htmlOutput } }];\n"
+      },
+      "id": "802e3b0d-8485-47de-b6a6-2209228a0b83",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        6096,
+        752
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = items;\n\n// Get column names from the first row\nconst headers = Object.keys(rows[0].json);\n\n// Build header HTML\nlet headerHtml = headers.map(col => `<th>${col}</th>`).join('');\n\n// Build rows\nlet bodyHtml = rows.map(row => {\n  return `<tr>${headers.map(col => `<td>${row.json[col]}</td>`).join('')}</tr>`;\n}).join('');\n\n// Combine into one table\nconst tableHtml = `\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n  <thead><tr>${headerHtml}</tr></thead>\n  <tbody>${bodyHtml}</tbody>\n</table>\n`;\n\nreturn [{ json: { table: tableHtml } }];\n"
+      },
+      "id": "6d172a61-10f2-4c58-b696-8fea56dfa292",
+      "name": "CostCenter",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5600,
+        160
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = items;\n\n// Get column names from the first row\nconst headers = Object.keys(rows[0].json);\n\n// Build header HTML\nlet headerHtml = headers.map(col => `<th>${col}</th>`).join('');\n\n// Build rows\nlet bodyHtml = rows.map(row => {\n  return `<tr>${headers.map(col => `<td>${row.json[col]}</td>`).join('')}</tr>`;\n}).join('');\n\n// Combine into one table\nconst tableHtml = `\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n  <thead><tr>${headerHtml}</tr></thead>\n  <tbody>${bodyHtml}</tbody>\n</table>\n`;\n\nreturn [{ json: { table: tableHtml } }];\n"
+      },
+      "id": "31ee9f3c-7ace-4760-a774-a675065188f2",
+      "name": "WIP1",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5568,
+        560
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = items;\n\n// Get column names from the first row\nconst headers = Object.keys(rows[0].json);\n\n// Build header HTML\nlet headerHtml = headers.map(col => `<th>${col}</th>`).join('');\n\n// Build rows\nlet bodyHtml = rows.map(row => {\n  return `<tr>${headers.map(col => `<td>${row.json[col]}</td>`).join('')}</tr>`;\n}).join('');\n\n// Combine into one table\nconst tableHtml = `\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n  <thead><tr>${headerHtml}</tr></thead>\n  <tbody>${bodyHtml}</tbody>\n</table>\n`;\n\nreturn [{ json: { table: tableHtml } }];\n"
+      },
+      "id": "873fd188-3a57-49e6-b89b-3b900dcb6a11",
+      "name": "Employees1",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5568,
+        768
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "1f2ac785-8b4d-4d40-8c5e-dba3f49bfe66",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        6080,
+        1360
+      ],
+      "webhookId": "83d7ae9a-e309-4bac-a0b4-5ff651e3afe3",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsCode": "let html = $input.first().json.output || '';\n\n// Remove ```html at the start and ``` at the end (if present)\nhtml = html.trim().replace(/^```html\\s*/i, '').replace(/```$/i, '');\n\nreturn [{\n  json: {\n    cleaned_html: html\n  }\n}];\n"
+      },
+      "id": "355d1e72-1e49-4a63-9d6d-873b7f4b9afa",
+      "name": "Financial Performance",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5376,
+        1088
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b227e25f-99ce-4147-b22d-c2a6cabfcafa",
+              "name": "CostCenter",
+              "type": "string",
+              "value": "={{ $('Selected Cost Center').first().json.CostCenter }}\n"
+            },
+            {
+              "id": "94e5a360-cbff-4498-bd75-98cafe08557b",
+              "name": "Email Output",
+              "type": "string",
+              "value": "={{ $json.cleaned_html }}"
+            },
+            {
+              "id": "20cd6408-ab44-4632-8f0a-967604f16a1c",
+              "name": "For the Month",
+              "type": "string",
+              "value": "=Month : {{ $('PreviousMonth').first().json.previousMonth }} - {{ $('PreviousMonth').first().json.year }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3a63b2cc-f134-48d4-82be-b338cf55308d",
+      "name": "Email Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        5616,
+        1088
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {},
+      "id": "65a292c2-b5f6-49d5-9663-abdfc00b8347",
+      "name": "Calculator",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "position": [
+        5248,
+        1392
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Business Performance Analyst Expert in Financial Management of Syncbricks LLC,  you willbe given an input to Analyze the Financial Performance of syncbricks which is an AI and Automation Company.\nThe sections Given to you will be below\n\n1. Financial Overview – YTD & PM Summary (whis is income and expense of the Company, this data doesn't include the calculation of Gross Profit and Net Profit that you must do. This should be used together in one section only don't seperate them)\n\n2. Financial Overview – Vertical Profit & Loss (This containers the Verticials within the Cost Center, these are in fact the Sub Business Unit, you don't need to calculate anything but the information is for analysis to see how the Verticals within the Business Unit Perfored )\n\n3. Financial Overview – WIP Summary (This is the Projects Summary about how many projects are currently open and work is the WIP - Work in Process of the Project, the WIP figure should be added for Profit and Loss Statement Under Proejct Reveneu as expected WIP)\n\n4. Employees in the Business Unit (These will be the number of Employees who are directly working in this BU, which means these employees are only serving the Company, other staff which are in back office support are not included in this. )\n*** Your Role ***\n\nYour Role is to Prepare a comprehensive Report : \n\n1. Executive Summary : Tell how was the overall performance of the Business Unit.\n\n2. Analayze the Financial Overview - YTD together with PM Summary (Which is Previous Month) which is previous month Income and Expenses you must use Proper Strcuture of Financial Statement with Budget Vs Actuals (follow same input already given). \n\nYou must use the Section that will be shared with you in detail that says \"Financial Overview – YTD & PM Summary \" and from there you must ensure to create sections based on best Practices of Performance Analysis that should include;\n\nSection: Revenue\n-Projects - Revenue\n-Trading - Revenue\n-Service - Revenue\nNet Sales (Total)\nSection: Project Work in Process\nWIP (Revenue to Book)\nTotal: Gross Sale\nSection: Cost of Sale\nProjects - COGS\nTrading - COGS\nService - COGS\nTotal Cost of Sales\nGross Profit\nOther Income\nGross Income\n\nSection: Indirect Cost (here you must all the detail of expenses from \"Financial Overview – YTD & PM Summary\"\nThen you must calculate\nProfit / (Loss) before tax\nNP % to Revenue\n\nUse the calculator tool to ensure precise calculations.\n\n\n- Don't add decimals give format in currency but don't add symbol.\nUse the standard P&L Format where you should first use Sale, then Cost of Sale and GP, then use Indirect Expenses and then Net Profile. Ensure to calculate the Perentages as well.\n3. Provide the Summary of the Verticials Performance with their Profit and Loss and Percetage and Total of all Verticlals\n4. Current Project Progress.\n5. Employees Summary, Number of Employees, How many joined in this Year and what is per Eployee Revenue and Gross Profit \n\nAnalyze Overall Performance of the Company and provide the Business Managers an Overview of what should be done next. Calculate per employee profit as well and suggest what is the performance overall\n\n**Tools**\nUse calculator tool to do all calculations for accurate calculations\n\n** Formatting and Output **\n\nGive output in html format fully responsive in with beauty added using CSS,  ready to be shared with all possible tables, in hightly attracrtive format, headings, add colors green for good, red for bad, organge for acceptable and so on, also add remarks to show how the performance was, enusre to response as if you were as an Expert in Analyzing the Bususiness Performance. Don't add any other infomration or symbols which are not part of html. Don't give additional message saying ok, I will do and so on.\nAlign Text in table on left and numbers on right\nNumber formatting : ##,###\n\n\nHere is the data\n\nMonth : {{ $('PreviousMonth').first().json.previousMonth }}\nYear  : {{ $('PreviousMonth').first().json.year }}\n\n{{ $json.html }}\n\n",
+        "options": {}
+      },
+      "id": "2f84afb3-f4f9-4a9d-9fd1-6f5ba5c7edfc",
+      "name": "Business Performance AI Agent (Analyst)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        4976,
+        1088
+      ],
+      "typeVersion": 1.8,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "56f76abf-9737-4660-aea7-e630d79bcdf5",
+      "name": "Think",
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "position": [
+        5088,
+        1392
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  -- budget_data.fiscal_year AS \"Year\",\n  -- budget_data.cost_center AS \"Cost Center\",\n    budget_data.budget_group AS \"Budget Group\",\n    -- YTD Totals up to previous month (up to dynamic month)\n    SUM(budget_data.budget_amount) AS \"Budget YTD\",\n    SUM(COALESCE(actual_data.actual_amount, 0)) AS \"Actual YTD\",\n    SUM(COALESCE(actual_data.actual_amount, 0)) - SUM(budget_data.budget_amount) AS \"Variance YTD\",\n    -- Previous Month Totals Only\n    SUM(CASE WHEN budget_data.budget_month = {{ $('PreviousMonth').item.json.previousMonth }} THEN budget_data.budget_amount ELSE 0 END) AS \"Budget PM\",\n    SUM(CASE WHEN budget_data.budget_month = {{ $('PreviousMonth').item.json.previousMonth }} THEN COALESCE(actual_data.actual_amount, 0) ELSE 0 END) AS \"Actual PM\",\n    SUM(CASE WHEN budget_data.budget_month = {{ $('PreviousMonth').item.json.previousMonth }} THEN COALESCE(actual_data.actual_amount, 0) ELSE 0 END) -\n    SUM(CASE WHEN budget_data.budget_month = {{ $('PreviousMonth').item.json.previousMonth }} THEN budget_data.budget_amount ELSE 0 END) AS \"Variance PM\"\nFROM\n    (\n        SELECT\n            bg.name AS budget_group,\n            bgd.fiscal_year,\n            bgd.budget_month,\n            bgd.cost_center,\n            CAST(bgd.budget_amount AS NUMERIC(18,6)) AS budget_amount\n        FROM\n            \"tabBudget Group Detail\" bgd\n        JOIN\n            \"tabBudget Group\" bg ON bg.name = bgd.parent\n        WHERE\n            bgd.fiscal_year = {{ $('PreviousMonth').item.json.year }}\n            AND bgd.budget_month <= {{ $('PreviousMonth').item.json.previousMonth }}\n            AND bgd.cost_center = '{{ $json.CostCenter }}'\n    ) AS budget_data\nLEFT JOIN (\n    SELECT\n        acc.budget_group AS budget_group,\n        EXTRACT(YEAR FROM gl.posting_date)::INT AS fiscal_year,\n        EXTRACT(MONTH FROM gl.posting_date)::INT AS budget_month,\n        gl.cost_center,\n        SUM(\n            CASE \n                WHEN acc.root_type = 'Income' THEN gl.credit - gl.debit\n                WHEN acc.root_type = 'Expense' THEN gl.debit - gl.credit\n                ELSE 0\n            END\n        ) AS actual_amount\n    FROM\n        \"tabGL Entry\" gl\n    JOIN\n        \"tabAccount\" acc ON gl.account = acc.name\n    WHERE\n        acc.budget_group IS NOT NULL\n        AND acc.root_type IN ('Income', 'Expense')\n        AND gl.docstatus = 1\n        AND EXTRACT(YEAR FROM gl.posting_date) = {{ $('PreviousMonth').item.json.year }}\n        AND EXTRACT(MONTH FROM gl.posting_date) <= {{ $('PreviousMonth').item.json.previousMonth }}\n        AND gl.cost_center = '{{ $('Filter').item.json['Cost Center'] }}'\n    GROUP BY\n        acc.budget_group,\n        EXTRACT(YEAR FROM gl.posting_date),\n        EXTRACT(MONTH FROM gl.posting_date),\n        gl.cost_center\n) AS actual_data\nON\n    budget_data.budget_group = actual_data.budget_group AND\n    budget_data.fiscal_year = actual_data.fiscal_year AND\n    budget_data.budget_month = actual_data.budget_month AND\n    budget_data.cost_center = actual_data.cost_center\nGROUP BY\n    budget_data.fiscal_year,\n    budget_data.cost_center,\n    budget_data.budget_group\nORDER BY\n    budget_data.cost_center,\n    budget_data.budget_group;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5312,
+        160
+      ],
+      "id": "2717f946-0ff2-43e5-b878-d12473b9cca7",
+      "name": "YTD vs Prevoius Month1",
+      "credentials": {
+        "postgres": {
+          "id": "1QiapojwP1QKXH5X",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    -- Total Income (based on root_type)\n    ROUND(SUM(CASE WHEN acc.root_type = 'Income' THEN gl.credit - gl.debit ELSE 0 END), 0) AS \"Total Income\",\n    -- Total Expenses (based on root_type)\n    ROUND(SUM(CASE WHEN acc.root_type = 'Expense' THEN gl.debit - gl.credit ELSE 0 END), 0) AS \"Total Expenses\",\n    -- Profit or Loss = Income - Expenses\n    ROUND(SUM(\n        CASE \n            WHEN acc.root_type = 'Income' THEN gl.credit - gl.debit\n            WHEN acc.root_type = 'Expense' THEN -1 * (gl.debit - gl.credit)\n            ELSE 0\n        END\n    ), 0) AS \"Profit or Loss\"\nFROM\n    \"tabGL Entry\" gl\nJOIN\n    \"tabAccount\" acc ON gl.account = acc.name\nWHERE\n    acc.root_type IN ('Income', 'Expense')\n    AND gl.docstatus = 1\n    AND gl.cost_center = '{{ $(\"Selected Cost Center\").item.json.CostCenter }}'\n    AND EXTRACT(MONTH FROM gl.posting_date) = {{ $(\"Selected Cost Center\").item.json.previousMonth }}\n    AND EXTRACT(YEAR FROM gl.posting_date) = {{ $(\"Selected Cost Center\").item.json.year }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5312,
+        368
+      ],
+      "id": "b0dfe9d9-4599-49aa-8ee3-990f30c9bfc3",
+      "name": "Departments",
+      "credentials": {
+        "postgres": {
+          "id": "1QiapojwP1QKXH5X",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    COUNT(DISTINCT p.name) AS \"Projects\",\n    SUM(p.contract_value) AS \"Contract Value\",\n    SUM(p.total_opening_revenue) AS \"Opening Revenue\",\n    SUM(p.total_opening_cost) AS \"Opening Cost\",\n\n    COALESCE((\n        SELECT SUM(gl.credit - gl.debit)\n        FROM \"tabGL Entry\" gl\n        JOIN \"tabAccount\" acc ON acc.name = gl.account\n        WHERE gl.docstatus = 1\n          AND acc.root_type = 'Income'\n          AND acc.is_group = FALSE\n          AND gl.project IN (\n              SELECT name FROM \"tabProject\"\n              WHERE cost_center = p.cost_center AND status = 'Open'\n          )\n          AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n    ), 0) AS \"New Revenue\",\n\n    COALESCE((\n        SELECT SUM(gl.debit - gl.credit)\n        FROM \"tabGL Entry\" gl\n        JOIN \"tabAccount\" acc ON acc.name = gl.account\n        WHERE gl.docstatus = 1\n          AND acc.root_type = 'Expense'\n          AND acc.is_group = FALSE\n          AND gl.project IN (\n              SELECT name FROM \"tabProject\"\n              WHERE cost_center = p.cost_center AND status = 'Open'\n          )\n          AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n    ), 0) AS \"New Cost\",\n\n    SUM(p.total_opening_revenue) + COALESCE((\n        SELECT SUM(gl.credit - gl.debit)\n        FROM \"tabGL Entry\" gl\n        JOIN \"tabAccount\" acc ON acc.name = gl.account\n        WHERE gl.docstatus = 1\n          AND acc.root_type = 'Income'\n          AND acc.is_group = FALSE\n          AND gl.project IN (\n              SELECT name FROM \"tabProject\"\n              WHERE cost_center = p.cost_center AND status = 'Open'\n          )\n          AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n    ), 0) AS \"Actual Revenue\",\n\n    SUM(p.total_opening_cost) + COALESCE((\n        SELECT SUM(gl.debit - gl.credit)\n        FROM \"tabGL Entry\" gl\n        JOIN \"tabAccount\" acc ON acc.name = gl.account\n        WHERE gl.docstatus = 1\n          AND acc.root_type = 'Expense'\n          AND acc.is_group = FALSE\n          AND gl.project IN (\n              SELECT name FROM \"tabProject\"\n              WHERE cost_center = p.cost_center AND status = 'Open'\n          )\n          AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n    ), 0) AS \"Actual Cost\",\n\n    CONCAT(ROUND((\n        (SUM(p.total_opening_revenue) + COALESCE((\n            SELECT SUM(gl.credit - gl.debit)\n            FROM \"tabGL Entry\" gl\n            JOIN \"tabAccount\" acc ON acc.name = gl.account\n            WHERE gl.docstatus = 1\n              AND acc.root_type = 'Income'\n              AND acc.is_group = FALSE\n              AND gl.project IN (\n                  SELECT name FROM \"tabProject\"\n                  WHERE cost_center = p.cost_center AND status = 'Open'\n              )\n              AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n        ), 0)) / NULLIF(SUM(p.contract_value), 0) * 100\n    ), 0), '%') AS \"Invoice %\",\n\n    CONCAT(ROUND((\n        (SUM(p.total_opening_cost) + COALESCE((\n            SELECT SUM(gl.debit - gl.credit)\n            FROM \"tabGL Entry\" gl\n            JOIN \"tabAccount\" acc ON acc.name = gl.account\n            WHERE gl.docstatus = 1\n              AND acc.root_type = 'Expense'\n              AND acc.is_group = FALSE\n              AND gl.project IN (\n                  SELECT name FROM \"tabProject\"\n                  WHERE cost_center = p.cost_center AND status = 'Open'\n              )\n              AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n        ), 0)) / NULLIF(SUM(p.budgeted_project_cost), 0) * 100\n    ), 0), '%') AS \"Cost %\",\n\n    CASE\n        WHEN SUM(p.budgeted_project_cost) = 0 THEN 0\n\n        WHEN (\n            SUM(p.total_opening_cost) + COALESCE((\n                SELECT SUM(gl.debit - gl.credit)\n                FROM \"tabGL Entry\" gl\n                JOIN \"tabAccount\" acc ON acc.name = gl.account\n                WHERE gl.docstatus = 1\n                  AND acc.root_type = 'Expense'\n                  AND acc.is_group = FALSE\n                  AND gl.project IN (\n                      SELECT name FROM \"tabProject\"\n                      WHERE cost_center = p.cost_center AND status = 'Open'\n                  )\n                  AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n            ), 0)\n        ) > SUM(p.budgeted_project_cost)\n\n        THEN\n            SUM(p.contract_value) - (\n                SUM(p.total_opening_revenue) + COALESCE((\n                    SELECT SUM(gl.credit - gl.debit)\n                    FROM \"tabGL Entry\" gl\n                    JOIN \"tabAccount\" acc ON acc.name = gl.account\n                    WHERE gl.docstatus = 1\n                      AND acc.root_type = 'Income'\n                      AND acc.is_group = FALSE\n                      AND gl.project IN (\n                          SELECT name FROM \"tabProject\"\n                          WHERE cost_center = p.cost_center AND status = 'Open'\n                      )\n                      AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n                ), 0)\n            )\n\n        ELSE\n            (SUM(p.contract_value) * (\n                (SUM(p.total_opening_cost) + COALESCE((\n                    SELECT SUM(gl.debit - gl.credit)\n                    FROM \"tabGL Entry\" gl\n                    JOIN \"tabAccount\" acc ON acc.name = gl.account\n                    WHERE gl.docstatus = 1\n                      AND acc.root_type = 'Expense'\n                      AND acc.is_group = FALSE\n                      AND gl.project IN (\n                          SELECT name FROM \"tabProject\"\n                          WHERE cost_center = p.cost_center AND status = 'Open'\n                      )\n                      AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n                ), 0)) / NULLIF(SUM(p.budgeted_project_cost), 0)\n            )) - (\n                SUM(p.total_opening_revenue) + COALESCE((\n                    SELECT SUM(gl.credit - gl.debit)\n                    FROM \"tabGL Entry\" gl\n                    JOIN \"tabAccount\" acc ON acc.name = gl.account\n                    WHERE gl.docstatus = 1\n                      AND acc.root_type = 'Income'\n                      AND acc.is_group = FALSE\n                      AND gl.project IN (\n                          SELECT name FROM \"tabProject\"\n                          WHERE cost_center = p.cost_center AND status = 'Open'\n                      )\n                      AND gl.posting_date <= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day')::date\n                ), 0)\n            )\n    END AS \"WIP\"\n\nFROM \"tabProject\" p\nWHERE p.status = 'Open'\nGROUP BY p.cost_center;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5312,
+        576
+      ],
+      "id": "7de02ea8-fe30-4232-ad7d-8409bee986fc",
+      "name": "Projects",
+      "credentials": {
+        "postgres": {
+          "id": "1QiapojwP1QKXH5X",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    COUNT(*) AS \"Total Employees\",\n\n    COUNT(\n        CASE \n            WHEN EXTRACT(YEAR FROM e.date_of_joining) = EXTRACT(YEAR FROM CURRENT_DATE)\n            THEN 1 \n        END\n    ) AS \"Joined This Year\",\n\n    COUNT(\n        CASE \n            WHEN EXTRACT(YEAR FROM e.date_of_joining) = EXTRACT(YEAR FROM CURRENT_DATE)\n             AND EXTRACT(MONTH FROM e.date_of_joining) = EXTRACT(MONTH FROM CURRENT_DATE)\n            THEN 1 \n        END\n    ) AS \"Joined This Month\"\n\nFROM tabemployee e\n\nWHERE\n    e.status = 'Active'\n    AND e.payroll_cost_center = 'CC-001'\n\nGROUP BY\n    e.payroll_cost_center;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5312,
+        768
+      ],
+      "id": "b43228d6-821f-481f-a29b-c075490ee4b0",
+      "name": "Employees",
+      "credentials": {
+        "postgres": {
+          "id": "1QiapojwP1QKXH5X",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "zakeenkhann@gmail.com",
+        "subject": "Business Performance Syncbricks",
+        "message": "={{ $json['Email Output'] }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        5888,
+        1104
+      ],
+      "id": "83b08261-ecb8-4d46-99bf-de1e738a35f1",
+      "name": "Send a message",
+      "webhookId": "0b7c87ee-6586-43cd-9af0-bddc9ffe197e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1kt3I7gZnCBZqwPY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nSELECT DISTINCT\n    budget_data.cost_center AS \"Cost Center\"\nFROM\n(\n    SELECT\n        bgd.cost_center,\n        bgd.fiscal_year,\n        bgd.budget_month\n    FROM\n        \"tabBudget Group Detail\" AS bgd\n    INNER JOIN\n        \"tabBudget Group\" AS bg\n        ON bg.name = bgd.parent\n    WHERE\n        bgd.fiscal_year ={{ $json.year }}\n        AND bgd.budget_month <= {{ $json.previousMonth }}\n        AND bgd.cost_center IS NOT NULL\n) AS budget_data\n\nINNER JOIN\n(\n    SELECT DISTINCT\n        gl.cost_center,\n        EXTRACT(YEAR FROM gl.posting_date) AS fiscal_year,\n        EXTRACT(MONTH FROM gl.posting_date) AS budget_month\n    FROM\n        \"tabGL Entry\" AS gl\n    INNER JOIN\n        \"tabAccount\" AS acc\n        ON gl.account = acc.name\n    WHERE\n        acc.budget_group IS NOT NULL\n        AND acc.root_type IN ('Income', 'Expense')\n        AND gl.docstatus = 1\n        AND EXTRACT(YEAR FROM gl.posting_date) = {{ $json.year }}\n        AND EXTRACT(MONTH FROM gl.posting_date) <= {{ $json.previousMonth }}\n        AND gl.cost_center IS NOT NULL\n) AS gl_data\n\nON\n    budget_data.cost_center = gl_data.cost_center\n    AND budget_data.fiscal_year = gl_data.fiscal_year\n    AND budget_data.budget_month = gl_data.budget_month\n\nORDER BY\n    \"Cost Center\";\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5520,
+        -80
+      ],
+      "id": "7de561d4-9fa6-4885-bf98-b495b80b367b",
+      "name": "Get cost center with budget",
+      "credentials": {
+        "postgres": {
+          "id": "1QiapojwP1QKXH5X",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openrouter/free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        4960,
+        1408
+      ],
+      "id": "7c9fa0e8-7efa-4779-91b0-59abde003efa",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "Xx2wsgaY1jYIPvu8",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Business Performance AI Agent (Analyst)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WIP1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Business Performance AI Agent (Analyst)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Business Performance AI Agent (Analyst)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CostCenter": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CostCentrs": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Data": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Employees1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "verticalPL": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "PreviousMonth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PreviousMonth": {
+      "main": [
+        [
+          {
+            "node": "Get cost center with budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Selected Cost Center",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selected Cost Center": {
+      "main": [
+        [
+          {
+            "node": "YTD vs Prevoius Month1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Departments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Projects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Financial Performance": {
+      "main": [
+        [
+          {
+            "node": "Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Performance AI Agent (Analyst)": {
+      "main": [
+        [
+          {
+            "node": "Financial Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YTD vs Prevoius Month1": {
+      "main": [
+        [
+          {
+            "node": "CostCenter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Departments": {
+      "main": [
+        [
+          {
+            "node": "verticalPL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Projects": {
+      "main": [
+        [
+          {
+            "node": "WIP1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Employees": {
+      "main": [
+        [
+          {
+            "node": "Employees1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get cost center with budget": {
+      "main": [
+        [
+          {
+            "node": "CostCentrs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Business Performance AI Agent (Analyst)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a5b86a39-ee4c-420c-b436-aee8d66a5dbb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b629830bc772f117b1acaaef9aa92465584eb95cb37aed0d32450ad62fc250f0"
+  },
+  "id": "A0vUMm2TqiWABoac",
+  "tags": []
+}
