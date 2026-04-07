@@ -1,44 +1,8 @@
 # Report Assistant Project - N8N Automation
 
-## 🚀 Main Workflow Overview
-
-```
-Schedule Trigger (5th of month)
-    ↓
-Date & Time → Previous Month Calculation
-    ↓
-Get Cost Centers with Budget Data
-    ↓
-Filter (AI DEPARTMENT)
-    ↓
-Loop Over Items (Cost Centers)
-    ↓
-┌─────────────────────────────────────┐
-│  Parallel Data Queries (PostgreSQL) │
-│  ├─ YTD vs Previous Month           │
-│  ├─ Departments (Vertical P&L)     │
-│  ├─ Projects (WIP Summary)         │
-│  └─ Employees Count                 │
-└─────────────────────────────────────┘
-    ↓
-Convert to HTML Tables
-    ↓
-Merge All Tables
-    ↓
-AI Agent (LangChain + OpenRouter)
-    ↓
-Financial Analysis & Report Generation
-    ↓
-Send Email (Gmail)
-    ↓
-Wait → Loop to Next Cost Center
-```
-
-## 📸 Workflow Screenshots
 
 ### Main Workflow Overview
-![Main Workflow](Report Assistant.JPG)
-
+![alt text](<Report Assistant.JPG>)
 ### Workflow Section 1
 ![Workflow Part 1](part1.JPG)
 
@@ -49,7 +13,7 @@ Wait → Loop to Next Cost Center
 ![Sample Report 1](report1.JPG)
 
 ### Sample Report Output 2
-![Sample Report 2](report2.JPG)
+![alt text](report2.JPG)
 
 ### Sample Report Output 3
 ![Sample Report 3](Report3.JPG)
