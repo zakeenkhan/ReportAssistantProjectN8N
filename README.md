@@ -2,7 +2,7 @@
 
 
 ### Main Workflow Overview
-![alt text](Mainworkflow.JPG)
+![alt text](Report.JPG)
 ### Workflow Section 1
 ![Workflow Part 1](part1.JPG)
 
